@@ -1,0 +1,22 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_JOB_POOLS": "compile=6;link=6",
+        "CMAKE_JOB_POOL_COMPILE": "compile",
+        "CMAKE_JOB_POOL_LINK": "link"
+      }
+    },
+    { "name": "editor-debug",       "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "EditorDebug" } },
+    { "name": "editor-development", "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "EditorDevelopment" } },
+    { "name": "editor-release",     "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "EditorRelease" } },
+    { "name": "game-debug",         "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "GameDebug" } },
+    { "name": "game-development",   "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "GameDevelopment" } },
+    { "name": "game-production",    "inherits": "base", "cacheVariables": { "CMAKE_BUILD_TYPE": "GameProduction" } }
+  ]
+}

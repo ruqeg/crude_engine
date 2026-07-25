@@ -1,0 +1,192 @@
+#pragma once
+
+#include "engine/core/alias.h"
+#include <engine/core/environment.h>
+#include <engine/engine/engine_commands_manager.h>
+#include <engine/graphics/asynchronous_loader_manager.h>
+#include <engine/graphics/lightmaps_manager.h>
+#include <engine/scene/node_manager.h>
+#include <engine/audio/audio_device.h>
+#include <engine/audio/audio_ecs.h>
+#include <engine/physics/physics.h>
+#include <engine/physics/physics_ecs.h>
+#include <engine/platform/platform.h>
+#include <engine/graphics/scene_renderer.h>
+#include <engine/graphics/imgui.h>
+#include <engine/graphics/techniques/techniques.h>
+
+#define CRUDE_CR_USER_DATA_GAME_INITIALIZED_FLAG           ( 1 << 0 )
+#define CRUDE_CR_USER_DATA_FRAMEWORK_INITIALIZED_FLAG      ( 1 << 1 )
+#define CRUDE_CR_USER_DATA_EDITOR_INITIALIZED_FLAG         ( 1 << 2 )
+
+typedef struct crude_cr_user_data
+{
+  uint32                                                   flags;
+  crude_engine                                            *engine;
+} crude_cr_user_data;
+
+typedef void (*crude_engine_gui_queue_draw_function)
+(
+  _In_ void                                               *ctx
+);
+
+typedef struct crude_engine_gui_queue_draw_function_container
+{
+  crude_engine_gui_queue_draw_function                     fn;
+  void                                                    *ctx;
+} crude_engine_gui_queue_draw_function_container;
+
+typedef void (*crude_engine_input_handle_function)
+(
+  _In_ void                                               *ctx
+);
+
+typedef struct crude_engine_input_handle_function_container
+{
+  crude_engine_input_handle_function                       fn;
+  void                                                    *ctx;
+} crude_engine_input_handle_function_container;
+
+typedef struct crude_engine_creation
+{
+  crude_environment_creation                               environment_creation;
+} crude_engine_creation;
+
+typedef struct crude_engine
+{ 
+  /******************************
+   *
+   * Common
+   *
+   ******************************/
+  crude_task_sheduler                                      task_sheduler;
+  bool                                                     running;
+  int64                                                    last_update_time;
+  crude_environment                                        environment;
+  float32                                                  delta_time;
+
+  /******************************
+   *
+   * Allocators
+   *
+   ******************************/
+  // 9/19/2026 RIP temporary allocator, you have worked for 1 year, but we don't need you anymore :_( it was overkill
+  crude_heap_allocator                                     common_allocator; 
+#if CRUDE_DEVELOP
+  crude_heap_allocator                                     develop_allocator;
+#endif
+
+  /******************************
+   *
+   * Scene
+   *
+   ******************************/
+  crude_node_manager                                       node_manager;
+  crude_engine_commands_manager                            commands_manager;
+  
+  /******************************
+   *
+   * ECS
+   *
+   ******************************/
+  crude_ecs                                               *world;
+  
+  char                                                     main_node_relative_filepath[ CRUDE_NODE_RELATIVE_FILEPATH_LENGTH_MAX ];
+  crude_entity                                             main_node;
+  crude_entity                                             camera_node;
+  crude_entity                                             player_controller_node;
+
+  crude_components_serialization_manager                   components_serialization_manager;
+
+  /******************************
+   *
+   * Window & Input
+   *
+   ******************************/
+  crude_platform                                           platform;
+  
+  /******************************
+   *
+   * ImGui
+   *
+   ******************************/
+  ImGuiContext                                            *imgui_context;
+  ImFont                                                  *imgui_font;
+
+  /******************************
+   *
+   * Graphics
+   *
+   ******************************/
+  crude_gfx_asynchronous_loader_manager                    asynchronous_loader_manager;
+
+  crude_task_set_handle                                    graphics_task_set_handle;
+
+  crude_gfx_device                                         gpu;
+  crude_gfx_frame_graph                                    frame_graph;
+  crude_gfx_asynchronous_loader                            async_loader;
+  crude_gfx_scene_renderer                                 scene_renderer;
+  crude_gfx_model_renderer_resources_manager               model_renderer_resources_manager;
+  crude_gfx_texture_manager                                texture_manager;
+  crude_gfx_lightmaps_manager                              lightmaps_manager;
+  int64                                                    last_graphics_update_time;
+  int32                                                    framerate;
+  float32                                                  graphics_absolute_time;
+
+  crude_gfx_initialize_techniques_func                    *initialize_techniques_functions;
+
+  crude_engine_gui_queue_draw_function_container           game_gui_queue_draws_container;
+  crude_engine_input_handle_function_container             game_input_handle_container;
+  crude_engine_gui_queue_draw_function_container           editor_gui_queue_draws_container;
+  crude_engine_input_handle_function_container             editor_input_handle_container;
+
+  /******************************
+   *
+   * Physics & Collisions
+   *
+   ******************************/
+  crude_physics_shapes_manager                             physics_shapes_manager;
+  crude_physics                                            physics;
+  crude_physics_system_context                             physics_system_context;
+
+  /******************************
+   *
+   * Audio
+   *
+   ******************************/
+  crude_audio_device                                       audio_device;
+  crude_audio_system_context                               audio_system_context;
+} crude_engine;
+
+CRUDE_API void
+crude_engine_initialize
+(
+  _In_ crude_engine                                       *engine,
+  _In_ crude_engine_creation const                        *creation
+);
+
+CRUDE_API void
+crude_engine_deinitialize
+(
+  _In_ crude_engine                                       *engine
+);
+
+CRUDE_API bool
+crude_engine_update
+(
+  _In_ crude_engine                                       *engine
+);
+
+CRUDE_API crude_engine_gui_queue_draw_function_container
+crude_engine_gui_queue_draw_function_container_pack
+(
+  _In_ crude_engine_gui_queue_draw_function                fn,
+  _In_ void                                               *ctx
+);
+
+CRUDE_API crude_engine_input_handle_function_container
+crude_engine_input_handle_function_container_pack
+(
+  _In_ crude_engine_input_handle_function                  fn,
+  _In_ void                                               *ctx
+);
